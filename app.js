@@ -4,6 +4,7 @@ require("express-async-errors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
+const cors = require("cors");
 
 const notFoundHandler = require("./middlewares/not-found");
 const errorHandler = require("./middlewares/error-handler");
@@ -12,6 +13,7 @@ const userRouter = require("./routes/userRoutes");
 const connectDB = require("./db/connect");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
