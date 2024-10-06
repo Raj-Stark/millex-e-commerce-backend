@@ -13,7 +13,12 @@ const userRouter = require("./routes/userRoutes");
 const connectDB = require("./db/connect");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Use your frontend URL here
+    credentials: true, // Allow credentials (cookies) to be sent
+  })
+);
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
