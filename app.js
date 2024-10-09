@@ -15,8 +15,8 @@ const connectDB = require("./db/connect");
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000", // Use your frontend URL here
-    credentials: true, // Allow credentials (cookies) to be sent
+    origin: "http://localhost:3000",
+    credentials: true,
   })
 );
 app.use(express.json());
