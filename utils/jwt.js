@@ -24,6 +24,7 @@ const attachCookiesToResponse = ({ res, user }) => {
     signed: true,
 
     path: "/",
+    sameSite: "Strict",
   });
 };
 

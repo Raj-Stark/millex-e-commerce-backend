@@ -10,6 +10,8 @@ const notFoundHandler = require("./middlewares/not-found");
 const errorHandler = require("./middlewares/error-handler");
 const authRouter = require("./routes/authRoutes");
 const userRouter = require("./routes/userRoutes");
+const productRouter = require("./routes/productRoutes");
+const categoryRouter = require("./routes/categoryRoutes");
 const connectDB = require("./db/connect");
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(cookieParser(process.env.JWT_SECRET));
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/product", productRouter);
+app.use("/api/v1/category", categoryRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
