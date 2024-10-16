@@ -4,9 +4,19 @@ const CustomError = require("../errors");
 const { attachCookiesToResponse } = require("../utils");
 
 const getAllUser = async (req, res) => {
-  res.send("Get all user");
   const users = (await User.find({})).select("-password");
   res.status(StatusCodes.OK).json({ users });
+};
+
+const getSingleUser = async (req, res) => {
+  const { id: userId } = req.params;
+
+  const user = await User.findOne({ _id: userId }).select("-password");
+
+  if (!user) {
+    throw new CustomError.NotFoundError("No user found with this ID");
+  }
+  res.status(StatusCodes.OK).json({ user });
 };
 
 const getCurrentUser = async (req, res) => {
@@ -80,4 +90,5 @@ module.exports = {
   getCurrentUser,
   updateUser,
   updateUserPassword,
+  getSingleUser,
 };
