@@ -7,6 +7,7 @@ const {
   deleteProduct,
   uploadImage,
   getProductsByCategory,
+  searchProducts,
 } = require("../controllers/productController");
 
 const {
@@ -30,6 +31,7 @@ router
   );
 
 router.route("/category/:categoryId").get(getProductsByCategory);
+router.route("/searchProducts").get(searchProducts);
 router
   .route("/:id")
   .get(getSingleProduct)

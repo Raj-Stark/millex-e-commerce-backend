@@ -13,6 +13,7 @@ const userRouter = require("./routes/userRoutes");
 const productRouter = require("./routes/productRoutes");
 const categoryRouter = require("./routes/categoryRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
+const bannerRouter = require("./routes/bannerRoutes");
 const connectDB = require("./db/connect");
 
 const app = express();
@@ -22,6 +23,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
@@ -31,6 +33,7 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/review", reviewRouter);
+app.use("/api/v1/banner", bannerRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

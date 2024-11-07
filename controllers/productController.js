@@ -87,7 +87,7 @@ const uploadImage = async (req, res, next) => {
     }
 
     const localFilePath = path.join(__dirname, "../uploads", req.file.filename);
-    const result = await fileUploadCloud(localFilePath);
+    const result = await fileUploadCloud(localFilePath, 800);
 
     if (!result) {
       throw new CustomError.BadRequestError(
@@ -121,6 +121,36 @@ const getProductsByCategory = async (req, res) => {
   res.status(StatusCodes.OK).json({ products, count: products.length });
 };
 
+// ! Search Products
+const searchProducts = async (req, res) => {
+  try {
+    const { keyword } = req.query;
+
+    if (!keyword) {
+      throw new CustomError.BadRequestError("Please provide a search keyword");
+    }
+
+    const products = await Product.find({
+      $or: [
+        { name: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+        { "category.name": { $regex: keyword, $options: "i" } },
+      ],
+    }).populate("category");
+
+    res.status(StatusCodes.OK).json({
+      products,
+      count: products.length,
+      msg:
+        products.length === 0
+          ? `No products found for the keyword: ${keyword}`
+          : undefined,
+    });
+  } catch (error) {
+    throw new CustomError.BadRequestError("Something went wrong !!");
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -129,4 +159,5 @@ module.exports = {
   getSingleProduct,
   uploadImage,
   getProductsByCategory,
+  searchProducts,
 };
