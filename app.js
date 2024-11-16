@@ -14,6 +14,7 @@ const productRouter = require("./routes/productRoutes");
 const categoryRouter = require("./routes/categoryRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
 const bannerRouter = require("./routes/bannerRoutes");
+const orderRouter = require("./routes/orderRoutes");
 const connectDB = require("./db/connect");
 
 const app = express();
@@ -34,6 +35,7 @@ app.use("/api/v1/product", productRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
+app.use("/api/v1/order", orderRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

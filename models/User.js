@@ -19,6 +19,16 @@ const UserSchema = new mongoose.Schema(
         message: "Please provide a valid Email",
       },
     },
+    phone: {
+      type: String,
+      unique: true,
+      validate: {
+        validator: function (v) {
+          return /^\d{10}$/.test(v);
+        },
+        message: "Please provide a valid 10-digit phone number",
+      },
+    },
     password: {
       type: String,
       required: [true, "Please provide password"],

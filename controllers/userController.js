@@ -29,7 +29,7 @@ const getCurrentUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-  const { name, email, address } = req.body;
+  const { name, email, phone, address } = req.body;
 
   if (
     Object.keys(req.body).length === 0 ||
@@ -46,6 +46,7 @@ const updateUser = async (req, res) => {
 
   if (name) user.name = name;
   if (email) user.email = email;
+  if (phone) user.phone = phone;
 
   if (address) {
     user.address = {
