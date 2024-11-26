@@ -4,8 +4,6 @@ const { isTokenValid } = require("../utils");
 const authenticateUser = (req, res, next) => {
   const token = req.signedCookies.token;
 
-  console;
-
   if (!token) {
     throw new CustomError.UnauthenticatedError("Authentication Invalid");
   }

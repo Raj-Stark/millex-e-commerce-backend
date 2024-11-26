@@ -74,7 +74,11 @@ const getSingleOrder = async (req, res) => {
 const getCurrentUserOrders = async (req, res) => {
   const orders = await Order.find({ user: req.user.userId });
 
-  res.status(StatusCodes.OK).json({ orders, count: orders.length });
+  const reversedOrders = orders.reverse();
+
+  res
+    .status(StatusCodes.OK)
+    .json({ orders: reversedOrders, count: orders.length });
 };
 
 const updateOrder = async (req, res) => {
