@@ -5,7 +5,7 @@ const ProductSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "Please provide product name"],
-      maxlength: [100, "Name cannot be more than 100 character"],
+      maxlength: [100, "Name cannot be more than 100 characters"],
     },
     price: {
       type: Number,
@@ -15,12 +15,18 @@ const ProductSchema = new mongoose.Schema(
     description: {
       type: String,
       required: [true, "Please provide product description"],
-      maxlength: [1000, "Name cannot be more than 1000 characters"],
+      maxlength: [1000, "Description cannot be more than 1000 characters"],
     },
-    image: {
-      type: String,
-      required: [true, "Please provide product image url"],
-      default: "/uploads/example.jpeg",
+    images: {
+      type: [String],
+      required: true,
+      validate: [
+        {
+          validator: (v) => Array.isArray(v) && v.length > 0,
+          message: "Please provide at least one product image URL",
+        },
+      ],
+      default: ["/uploads/example.jpeg"],
     },
     category: {
       type: mongoose.Types.ObjectId,
