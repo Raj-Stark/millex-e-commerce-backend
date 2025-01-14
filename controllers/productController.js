@@ -13,7 +13,7 @@ const createProduct = async (req, res) => {
 
 // ! Update Product
 const updateProduct = async (req, res) => {
-  const product = await Product.findOneAndUpdate({ _id: productId }, req.body, {
+  const product = await Product.findOneAndUpdate({ _id: req.params.id }, req.body, {
     new: true,
     runValidators: true,
   });
