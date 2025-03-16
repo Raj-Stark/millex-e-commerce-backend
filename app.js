@@ -20,7 +20,7 @@ const connectDB = require("./db/connect");
 const app = express();
 app.use(
   cors({
-    origin: "http://193.203.160.16",
+    origin: ["http://localhost:3000"],
     credentials: true,
   })
 );
@@ -40,7 +40,7 @@ app.use("/api/v1/order", orderRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(process.env.PORT || 8000, async () => {
+app.listen(process.env.PORT || 8080, async () => {
   await connectDB();
   console.log(`Server listening at PORT: ${process.env.PORT}`);
 });

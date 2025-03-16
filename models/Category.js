@@ -10,9 +10,24 @@ const CategorySchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      required: [true, "Please provide category image URL"],
-      default: "/uploads/category-image.jpeg",
+      default: null,
     },
+    slug: {
+      type: String,
+      required: [true, "Please provide category slug"],
+      unique: true,
+    },
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
+    },
+    attributes: [
+      {
+        name: String,
+        enum: ["boolean", "string", "number", "date"],
+      },
+    ],
   },
   {
     timestamps: true,

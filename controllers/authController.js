@@ -12,7 +12,7 @@ const register = async (req, res) => {
     throw new CustomError.BadRequestError("Email Already Exist");
   }
 
-  const user = await User.create({ name, email, password });
+  const user = await User.create({ name, email, password, wishlist: [] });
 
   const tokenUser = { name: user.name, userId: user._id, role: user.role };
   attachCookiesToResponse({ res, user: tokenUser });
@@ -26,7 +26,7 @@ const login = async (req, res) => {
     throw new CustomError.BadRequestError("Please provide email & password");
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email })
 
   if (!user) {
     throw new CustomError.UnauthenticatedError(
@@ -40,7 +40,8 @@ const login = async (req, res) => {
     throw new CustomError.UnauthenticatedError("Invalid Password");
   }
 
-  const tokenUser = { name: user.name, userId: user._id, role: user.role };
+  const tokenUser = { name: user.name, userId: user._id, role: user.role, wishlist: user.wishlist };
+  console.log("tokenUser",tokenUser)
   attachCookiesToResponse({ res, user: tokenUser });
 
   res.status(StatusCodes.OK).json({ msg: "success", user: tokenUser });

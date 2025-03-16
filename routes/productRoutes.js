@@ -30,7 +30,7 @@ router
     uploadImage
   );
 
-router.route("/category/:categoryId").get(getProductsByCategory);
+router.route("/filter").post(getProductsByCategory);
 router.route("/searchProducts").get(searchProducts);
 router
   .route("/:id")

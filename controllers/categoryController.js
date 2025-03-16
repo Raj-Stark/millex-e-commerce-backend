@@ -3,23 +3,56 @@ const { StatusCodes } = require("http-status-codes");
 
 const CustomError = require("../errors");
 
-const MAX_CATEGORIES = 5;
-
 const createCategory = async (req, res) => {
-  const categoryCount = await Category.countDocuments();
-  if (categoryCount >= MAX_CATEGORIES) {
-    throw new CustomError.BadRequestError(
-      `You cannot create more than ${MAX_CATEGORIES} categories.`
-    );
+  /**
+   * @type {string | undefined} parentId
+   */
+  const parentSlug = req?.params?.parentSlug || null;
+
+  let parentId = null;
+
+  if (parentSlug) {
+    const parentCategory = await Category.findOne({ slug: parentSlug });
+    if (!parentCategory) {
+      throw new CustomError.NotFoundError(
+        `Category with id: ${parentId} not found`
+      );
+    }
+    parentId = parentCategory._id;
   }
 
-  const category = await Category.create(req.body);
+  // @Deprecated
+  // if (categoryCount >= MAX_CATEGORIES) {
+  //   throw new CustomError.BadRequestError(
+  //     `You cannot create more than ${MAX_CATEGORIES} categories.`
+  //   );
+  // }
+
+  const category = await Category.create({
+    ...req.body,
+    parentId,
+  });
+
   res.status(StatusCodes.CREATED).json({ category });
 };
+
 const getAllCategory = async (req, res) => {
-  const categories = await Category.find({});
+  const parentSlug = req?.params?.parentSlug || null;
+  let categories;
+  if (parentSlug) {
+    const parentCategory = await Category.findOne({ slug: parentSlug });
+    if (!parentCategory) {
+      throw new CustomError.NotFoundError(
+        `Category with slug: ${parentSlug} not found`
+      );
+    }
+    categories = await Category.find({ parentId: parentCategory._id });
+  } else {
+    categories = await Category.find({ parentId: null });
+  }
   res.status(StatusCodes.OK).json({ categories, count: categories.length });
 };
+
 const updateCategory = async (req, res) => {
   const { id: categoryId } = req.params;
 

@@ -16,7 +16,7 @@ const { uploadImage } = require("../controllers/productController");
 const router = express.Router();
 
 router
-  .route("/")
+  .route("/:parentSlug?")
   .get(getAllCategory)
   .post([authenticateUser, authorizePermission("admin")], createCategory);
 
