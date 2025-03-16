@@ -46,6 +46,7 @@ const UserSchema = new mongoose.Schema(
       zip: { type: String, maxlength: 50 },
       country: { type: String, maxlength: 50 },
     },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Products" }],
   },
   { strict: "throw" }
 );

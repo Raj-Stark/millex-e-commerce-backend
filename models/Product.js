@@ -7,6 +7,11 @@ const ProductSchema = new mongoose.Schema(
       required: [true, "Please provide product name"],
       maxlength: [100, "Name cannot be more than 100 characters"],
     },
+    slug: {
+      type: String,
+      required: [true, "Please provide product slug"],
+      unique: true,
+    },
     price: {
       type: Number,
       required: [true, "Please provide product price"],
@@ -54,6 +59,12 @@ const ProductSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    attributes: [
+      {
+        name: String,
+        enum: ["boolean", "string", "number", "date"],
+      },
+    ],
   },
   {
     timestamps: true,

@@ -11,7 +11,7 @@ const getAllUser = async (req, res) => {
 const getSingleUser = async (req, res) => {
   const { id: userId } = req.params;
 
-  const user = await User.findOne({ _id: userId }).select("-password");
+  const user = await User.findOne({ _id: userId }).populate('wishlist').select("-password");
 
   if (!user) {
     throw new CustomError.NotFoundError("No user found with this ID");
@@ -20,9 +20,9 @@ const getSingleUser = async (req, res) => {
 };
 
 const getCurrentUser = async (req, res) => {
-  const user = await User.findOne({ _id: req.user.userId }).select("-password");
+  const user = await User.findOne({ _id: req.user.userId }).populate('wishlist').select("-password");
 
-  if (!user) {
+  if (!user) {1
     throw new CustomError.NotFoundError("No user found with this ID");
   }
   res.status(StatusCodes.OK).json({ user });
@@ -81,10 +81,54 @@ const updateUserPassword = async (req, res) => {
 
   user.password = newPassword;
 
-  await user.save();
+  await user.save();m 
 
   res.status(StatusCodes.OK).json({ msg: "Success!" });
 };
+
+const toggleToWishlist = async (req, res) => {
+  const { productId } = req.body;
+  try {
+    const user = await User.findOne({ _id: req.user.userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const wishlist = user.wishlist?.map((id) => id.toString()) ?? [];
+
+    console.log("wishlist",wishlist,productId)
+
+    const addToWishList = !wishlist.includes(productId);
+
+    if (addToWishList) {``
+      user.wishlist = [productId, ...wishlist];
+    }
+    else {
+      user.wishlist = wishlist.filter((id) => id !== productId);
+    }
+    await user.save();
+    res.json({ data: addToWishList, message: addToWishList? "Product added to wishlist":"Product removed from wishlist" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const getUsersWishlist = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.user.userId }).populate("wishlist");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const wishlist = user.wishlist ?? [];
+    res.json({ wishlist });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 module.exports = {
   getAllUser,
@@ -92,4 +136,6 @@ module.exports = {
   updateUser,
   updateUserPassword,
   getSingleUser,
+  toggleToWishlist,
+  getUsersWishlist
 };
