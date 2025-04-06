@@ -19,7 +19,11 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-const allowedOrigins = ["http://localhost:3000", "https://farmgear.in"];
+const allowedOrigins = [
+  "http://localhost:3000", // local dev
+  "https://farmgear.in", // non-www version
+  "https://www.farmgear.in", // www version (PRODUCTION frontend)
+];
 app.use(
   cors({
     origin: function (origin, callback) {
