@@ -20,24 +20,28 @@ const connectDB = require("./db/connect");
 const app = express();
 
 const allowedOrigins = [
-  "http://localhost:3000", // local dev
-  "https://farmgear.in", // non-www version
-  "https://www.farmgear.in", // www version (PRODUCTION frontend)
+  "http://localhost:3000",
+  "https://farmgear.in",
+  "https://www.farmgear.in",
 ];
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
 
-app.options("*", cors());
+const corsOptions = {
+  origin: function (origin, callback) {
+    console.log("CORS request from:", origin); // optional debug
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS: " + origin));
+    }
+  },
+  credentials: true,
+};
+
+// ✅ Apply to all routes
+app.use(cors(corsOptions));
+
+// ✅ Also apply to preflight (OPTIONS) requests
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("tiny"));
