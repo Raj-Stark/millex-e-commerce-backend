@@ -38,11 +38,11 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ CORS middleware
-app.use(cors(corsOptions));
-
-// ✅ Handle preflight requests
+// ✅ Handle preflight requests before other middleware
 app.options("*", cors(corsOptions));
+
+// ✅ Apply CORS globally
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(morgan("tiny"));
