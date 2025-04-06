@@ -37,6 +37,8 @@ app.use(
   })
 );
 
+app.options("*", cors());
+
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
