@@ -19,6 +19,7 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
+// CORS options for local development only
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
@@ -27,7 +28,6 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log("CORS request from:", origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -37,15 +37,16 @@ const corsOptions = {
   credentials: true,
 };
 
+// Enable CORS only for dev/testing (production handled by NGINX)
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // for preflight requests
+app.options("*", cors(corsOptions)); // Handle preflight requests
 
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
 app.use(fileUpload());
 
-// Routes
+// Route registration
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
@@ -54,11 +55,12 @@ app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
 app.use("/api/v1/order", orderRouter);
 
-// Error handlers
+// Error middleware
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// Start server
 app.listen(process.env.PORT || 8080, async () => {
   await connectDB();
-  console.log(`Server listening at PORT: ${process.env.PORT}`);
+  console.log(`✅ Server listening at PORT: ${process.env.PORT}`);
 });
