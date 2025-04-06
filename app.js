@@ -19,34 +19,33 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-// CORS options for local development only
-const cors = require("cors");
-
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
   "https://www.farmgear.in",
 ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS: " + origin));
-    }
-  },
-  credentials: true,
-};
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// Required for preflight (OPTIONS) requests
+app.options("*", cors());
+
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
 app.use(fileUpload());
 
-// Route registration
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
@@ -55,12 +54,10 @@ app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
 app.use("/api/v1/order", orderRouter);
 
-// Error middleware
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
 app.listen(process.env.PORT || 8080, async () => {
   await connectDB();
-  console.log(`✅ Server listening at PORT: ${process.env.PORT}`);
+  console.log(`Server listening at PORT: ${process.env.PORT}`);
 });
