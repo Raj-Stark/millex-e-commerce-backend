@@ -20,6 +20,8 @@ const connectDB = require("./db/connect");
 const app = express();
 
 // CORS options for local development only
+const cors = require("cors");
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
@@ -37,10 +39,8 @@ const corsOptions = {
   credentials: true,
 };
 
-// Enable CORS only for dev/testing (production handled by NGINX)
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Handle preflight requests
-
+app.options("*", cors(corsOptions));
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
