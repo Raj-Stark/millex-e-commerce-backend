@@ -27,7 +27,7 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log("CORS request from:", origin); // optional debug
+    console.log("CORS request from:", origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -37,10 +37,7 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Apply to all routes
 app.use(cors(corsOptions));
-
-// ✅ Also apply to preflight (OPTIONS) requests
 app.options("*", cors(corsOptions));
 
 app.use(express.json());
