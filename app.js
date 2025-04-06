@@ -46,6 +46,15 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
+
+  res.on("finish", () => {
+    // For debugging – optional
+    console.log(
+      "↪️ Response sent with CORS headers:",
+      res.getHeader("Access-Control-Allow-Origin")
+    );
+  });
+
   next();
 });
 
