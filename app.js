@@ -26,6 +26,17 @@ const allowedOrigins = [
   "https://www.farmgear.in",
 ];
 
+// ✅ Manual CORS header fallback (ensures they’re always set)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  res.setHeader("Vary", "Origin");
+  next();
+});
+
 // ✅ Centralized CORS options
 const corsOptions = {
   origin: function (origin, callback) {
@@ -38,7 +49,7 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Handle preflight requests before other middleware
+// ✅ Preflight requests
 app.options("*", cors(corsOptions));
 
 // ✅ Apply CORS globally
