@@ -20,6 +20,8 @@ const connectDB = require("./db/connect");
 const app = express();
 
 // ✅ Clean, strict CORS setup
+const cors = require("cors");
+
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
@@ -29,16 +31,16 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin); // ✅ this is the key fix!
+      callback(null, origin); // ✅ CRUCIAL: reflect exact origin
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("Not allowed by CORS: " + origin));
     }
   },
   credentials: true,
 };
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ handle preflight before routes
+app.use(cors(corsOptions)); // ✅ MUST be at the top
+app.options("*", cors(corsOptions)); // ✅ Handle preflight before any routes
 
 // ✅ Other middleware
 app.use(express.json());
