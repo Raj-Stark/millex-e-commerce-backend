@@ -37,7 +37,17 @@ const corsOptions = {
   credentials: true,
 };
 
-app.use(cors(corsOptions)); // ✅ MUST be at the top
+//! temp changes
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  console.log("✅ Custom CORS headers set");
+  next();
+});
+
+//! app.use(cors(corsOptions)); // ✅ MUST be at the top
 app.options("*", cors(corsOptions)); // ✅ Handle preflight before any routes
 
 // ✅ Other middleware
