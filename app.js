@@ -4,7 +4,6 @@ require("express-async-errors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const fileUpload = require("express-fileupload");
-const cors = require("cors");
 
 const notFoundHandler = require("./middlewares/not-found");
 const errorHandler = require("./middlewares/error-handler");
@@ -19,34 +18,18 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://farmgear.in",
-  "https://www.farmgear.in",
-];
-
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     console.log("🚦 Incoming CORS request from origin:", origin); // 🔍 log this
-//     if (!origin || allowedOrigins.includes(origin)) {
-//       callback(null, origin);
-//     } else {
-//       callback(new Error("Not allowed by CORS: " + origin));
-//     }
-//   },
-//   credentials: true,
-// };
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    console.log("🚦 Incoming CORS request from origin:", origin);
-    callback(null, origin || "*"); // reflect any origin
-  },
-  credentials: true,
-};
-
-app.use(cors(corsOptions)); // ✅ MUST be at the top
-app.options("*", cors(corsOptions)); // ✅ Handle preflight before any routes
+// ✅ Manual CORS middleware (temporary dev fix)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    console.log("✅ Manually allowed origin:", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 
 // ✅ Other middleware
 app.use(express.json());
