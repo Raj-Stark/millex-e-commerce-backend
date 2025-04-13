@@ -19,9 +19,6 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-// ✅ Clean, strict CORS setup
-const cors = require("cors");
-
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
