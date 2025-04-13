@@ -19,29 +19,17 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-// ✅ Allow only these origins
+// ✅ CORS configuration
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
   "https://www.farmgear.in",
 ];
 
-// ✅ Manual CORS header fallback (ensures they’re always set)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  res.setHeader("Vary", "Origin");
-  next();
-});
-
-// ✅ Centralized CORS options
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+      callback(null, origin); // ✅ reflect the exact origin
     } else {
       callback(new Error("Not allowed by CORS: " + origin));
     }
@@ -49,18 +37,17 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Preflight requests
-app.options("*", cors(corsOptions));
-
-// ✅ Apply CORS globally
+// ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight requests
 
+// ✅ Other middleware
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
 app.use(fileUpload());
 
-// ✅ Routes
+// ✅ API Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
@@ -69,7 +56,7 @@ app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
 app.use("/api/v1/order", orderRouter);
 
-// ✅ Error handlers
+// ✅ Error handling middleware
 app.use(notFoundHandler);
 app.use(errorHandler);
 
