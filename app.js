@@ -25,14 +25,22 @@ const allowedOrigins = [
   "https://www.farmgear.in",
 ];
 
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     console.log("🚦 Incoming CORS request from origin:", origin); // 🔍 log this
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       callback(null, origin);
+//     } else {
+//       callback(new Error("Not allowed by CORS: " + origin));
+//     }
+//   },
+//   credentials: true,
+// };
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    console.log("🚦 Incoming CORS request from origin:", origin); // 🔍 log this
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin);
-    } else {
-      callback(new Error("Not allowed by CORS: " + origin));
-    }
+  origin: (origin, callback) => {
+    console.log("🚦 Incoming CORS request from origin:", origin);
+    callback(null, origin || "*"); // reflect any origin
   },
   credentials: true,
 };
