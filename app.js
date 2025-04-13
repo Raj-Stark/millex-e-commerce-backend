@@ -19,7 +19,7 @@ const connectDB = require("./db/connect");
 
 const app = express();
 
-// ✅ CORS configuration
+// ✅ Clean, strict CORS setup
 const allowedOrigins = [
   "http://localhost:3000",
   "https://farmgear.in",
@@ -29,7 +29,7 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin); // ✅ reflect the exact origin
+      callback(null, origin); // ✅ reflect request origin
     } else {
       callback(new Error("Not allowed by CORS: " + origin));
     }
@@ -37,9 +37,8 @@ const corsOptions = {
   credentials: true,
 };
 
-// ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // handle preflight requests
+app.options("*", cors(corsOptions)); // ✅ handle preflight before routes
 
 // ✅ Other middleware
 app.use(express.json());
@@ -47,7 +46,7 @@ app.use(morgan("tiny"));
 app.use(cookieParser(process.env.JWT_SECRET));
 app.use(fileUpload());
 
-// ✅ API Routes
+// ✅ Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
@@ -56,7 +55,7 @@ app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
 app.use("/api/v1/order", orderRouter);
 
-// ✅ Error handling middleware
+// ✅ Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
