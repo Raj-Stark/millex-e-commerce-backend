@@ -7,7 +7,18 @@ const Category = require("../models/Category");
 
 // ! Create Product
 const createProduct = async (req, res) => {
-  const product = await Product.create(req.body);
+  const { categoryId, ...rest } = req.body;
+
+  if (!categoryId) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ msg: "Please provide categoryId" });
+  }
+
+  const product = await Product.create({
+    ...rest,
+    category: categoryId,
+  });
 
   res.status(StatusCodes.CREATED).json({ product });
 };
