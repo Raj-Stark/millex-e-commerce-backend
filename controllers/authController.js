@@ -1,51 +1,71 @@
 const User = require("../models/User");
+const { OAuth2Client } = require("google-auth-library");
 const CustomError = require("../errors");
 const { StatusCodes } = require("http-status-codes");
 const { attachCookiesToResponse } = require("../utils");
 
-const register = async (req, res) => {
-  const { name, email, password } = req.body;
+const client = new OAuth2Client({
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  redirectUri: "postmessage",
+});
 
-  const isEmailExist = await User.findOne({ email });
+const ADMIN_EMAILS = ["vishalpj1144@gmail.com"];
 
-  if (isEmailExist) {
-    throw new CustomError.BadRequestError("Email Already Exist");
+const googleLogin = async (req, res) => {
+  const { code } = req.body;
+
+  if (!code) {
+    throw new CustomError.BadRequestError("Authorization code is missing");
   }
 
-  const user = await User.create({ name, email, password, wishlist: [] });
+  try {
+    // Exchange code for tokens
+    const { tokens } = await client.getToken(code);
+    const idToken = tokens.id_token;
 
-  const tokenUser = { name: user.name, userId: user._id, role: user.role };
-  attachCookiesToResponse({ res, user: tokenUser });
+    // Verify the token and extract payload
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-  res.status(StatusCodes.CREATED).json({ user });
+    const payload = ticket.getPayload();
+
+    if (!payload.email_verified) {
+      throw new CustomError.UnauthenticatedError("Email not verified");
+    }
+
+    const role = ADMIN_EMAILS.includes(payload.email) ? "admin" : "user";
+
+    let user = await User.findOne({ email: payload.email });
+
+    if (!user) {
+      user = await User.create({
+        name: payload.name,
+        email: payload.email,
+        googleId: payload.sub,
+        role,
+      });
+    }
+
+    const tokenUser = {
+      name: user.name,
+      userId: user._id,
+      role: user.role,
+    };
+
+    attachCookiesToResponse({ res, user: tokenUser });
+
+    res
+      .status(StatusCodes.OK)
+      .json({ msg: "Google login successful", user: tokenUser });
+  } catch (error) {
+    console.error("Google login error:", error);
+    throw new CustomError.UnauthenticatedError("Google login failed");
+  }
 };
-const login = async (req, res) => {
-  const { email, password } = req.body;
 
-  if (!email || !password) {
-    throw new CustomError.BadRequestError("Please provide email & password");
-  }
-
-  const user = await User.findOne({ email })
-
-  if (!user) {
-    throw new CustomError.UnauthenticatedError(
-      "User does not exist! Make sure to register first"
-    );
-  }
-
-  const isPasswordCorrect = await user.checkPassword({ password });
-
-  if (!isPasswordCorrect) {
-    throw new CustomError.UnauthenticatedError("Invalid Password");
-  }
-
-  const tokenUser = { name: user.name, userId: user._id, role: user.role, wishlist: user.wishlist };
-  console.log("tokenUser",tokenUser)
-  attachCookiesToResponse({ res, user: tokenUser });
-
-  res.status(StatusCodes.OK).json({ msg: "success", user: tokenUser });
-};
 const logout = async (req, res) => {
   res.cookie("token", "logout", {
     httpOnly: true,
@@ -56,7 +76,6 @@ const logout = async (req, res) => {
 };
 
 module.exports = {
-  register,
-  login,
+  googleLogin,
   logout,
 };
