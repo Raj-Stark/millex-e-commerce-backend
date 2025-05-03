@@ -14,17 +14,17 @@ const isTokenValid = ({ token }) => {
 
 const attachCookiesToResponse = ({ res, user }) => {
   const token = createJWT({ payload: user });
-
   const oneDay = 1000 * 60 * 60 * 24;
+
+  const isProduction = process.env.NODE_ENV === "production";
 
   res.cookie("token", token, {
     httpOnly: true,
     expires: new Date(Date.now() + oneDay),
-    secure: process.env.NODE_ENV === "production",
+    secure: isProduction, // only true if behind HTTPS
     signed: true,
-
+    sameSite: isProduction ? "Strict" : "Lax", // allow cookie in dev
     path: "/",
-    sameSite: "Strict",
   });
 };
 

@@ -31,8 +31,6 @@ const getCurrentUser = async (req, res) => {
 const updateUser = async (req, res) => {
   const { name, email, phone, address } = req.body;
 
-  console.log(req.body);
-
   if (
     Object.keys(req.body).length === 0 ||
     (address && Object.keys(address).length === 0)
@@ -40,28 +38,24 @@ const updateUser = async (req, res) => {
     throw new CustomError.BadRequestError("Provide values for update");
   }
 
-  const user = await User.findById(req.user.userId);
+  const updateFields = {};
+  if (name) updateFields.name = name;
+  if (email) updateFields.email = email;
+  if (phone) updateFields.phone = phone;
+  if (address) updateFields.address = address;
+
+  const user = await User.findByIdAndUpdate(
+    req.user.userId,
+    { $set: updateFields },
+    { new: true, runValidators: true }
+  );
+
   if (!user) {
     throw new CustomError.NotFoundError("User not found");
   }
 
-  if (name) user.name = name;
-  if (email) user.email = email;
-  if (phone) user.phone = phone;
-
-  if (address) {
-    user.address = {
-      ...user.address,
-      ...address,
-    };
-  }
-
-  await user.save();
-
   const tokenUser = { name: user.name, userId: user._id, role: user.role };
   attachCookiesToResponse({ res, user: tokenUser });
-
-  console.log("✅ User updated:", tokenUser); // helpful during dev
 
   res.status(StatusCodes.OK).json({
     msg: "User updated successfully",
