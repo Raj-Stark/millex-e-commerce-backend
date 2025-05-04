@@ -64,7 +64,6 @@ const getAllProduct = async (req, res) => {
 // ! Get Single Product
 
 const getSingleProduct = async (req, res) => {
-  console.log("this is being invoked");
   const { id: productSlug } = req.params;
 
   const product = await Product.findOne({ slug: productSlug })

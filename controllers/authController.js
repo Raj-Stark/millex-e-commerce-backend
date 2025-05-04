@@ -12,30 +12,38 @@ const client = new OAuth2Client({
 
 const ADMIN_EMAILS = ["vishalpj1144@gmail.com", "rpal778866@gmail.com"];
 
-// ✅ PUBLIC Google login for main site
-const googleLogin = async (req, res) => {
-  const { code } = req.body;
-
+// 🔄 Shared function to verify token and extract payload
+const getPayloadFromCode = async (code) => {
   if (!code) {
     throw new CustomError.BadRequestError("Authorization code is missing");
   }
 
+  const { tokens } = await client.getToken(code);
+  const idToken = tokens.id_token;
+  if (!idToken) {
+    throw new CustomError.UnauthenticatedError("Invalid Google token");
+  }
+
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  });
+
+  return ticket.getPayload();
+};
+
+// 🌐 Public Google login (any verified user)
+const googleLogin = async (req, res) => {
   try {
-    const { tokens } = await client.getToken(code);
-    const idToken = tokens.id_token;
-
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
+    const payload = await getPayloadFromCode(req.body.code);
 
     if (!payload.email_verified) {
       throw new CustomError.UnauthenticatedError("Email not verified");
     }
 
-    // Allow any verified user
+    const isAdmin = ADMIN_EMAILS.includes(payload.email);
+    const role = isAdmin ? "admin" : "user";
+
     let user = await User.findOne({ email: payload.email });
 
     if (!user) {
@@ -43,8 +51,11 @@ const googleLogin = async (req, res) => {
         name: payload.name,
         email: payload.email,
         googleId: payload.sub,
-        role: "user",
+        role,
       });
+    } else if (user.role !== role) {
+      user.role = role;
+      await user.save();
     }
 
     const tokenUser = {
@@ -56,7 +67,7 @@ const googleLogin = async (req, res) => {
     attachCookiesToResponse({ res, user: tokenUser });
 
     res.status(StatusCodes.OK).json({
-      msg: "Google login successful",
+      msg: `${role === "admin" ? "Admin" : "User"} login successful`,
       user: tokenUser,
     });
   } catch (error) {
@@ -65,50 +76,19 @@ const googleLogin = async (req, res) => {
   }
 };
 
-// ✅ Admin-only login for dashboard
+// 🔒 Admin-only login
 const googleLoginAdmin = async (req, res) => {
-  const { code } = req.body;
-
-  console.log("🟡 Received login request with code:", code);
-
-  if (!code) {
-    console.error("❌ No authorization code provided");
-    throw new CustomError.BadRequestError("Authorization code is missing");
-  }
-
   try {
-    // Step 1: Exchange code for tokens
-    const { tokens } = await client.getToken(code);
-    console.log("🟢 Google tokens received:", tokens);
+    const payload = await getPayloadFromCode(req.body.code);
 
-    const idToken = tokens.id_token;
-    if (!idToken) {
-      console.error("❌ No id_token found in tokens");
-      throw new CustomError.UnauthenticatedError("Invalid Google token");
-    }
-
-    // Step 2: Verify ID token
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-    console.log("🔵 Google payload decoded:", payload);
-
-    // Step 3: Verify email
     if (!payload.email_verified) {
-      console.error("❌ Email not verified:", payload.email);
       throw new CustomError.UnauthenticatedError("Email not verified");
     }
 
-    // Step 4: Check admin access
     if (!ADMIN_EMAILS.includes(payload.email)) {
-      console.error("⛔ Unauthorized admin email attempt:", payload.email);
       throw new CustomError.UnauthenticatedError("Access denied: Admins only");
     }
 
-    // Step 5: Check if user exists or create new
     let user = await User.findOne({ email: payload.email });
 
     if (!user) {
@@ -118,12 +98,11 @@ const googleLoginAdmin = async (req, res) => {
         googleId: payload.sub,
         role: "admin",
       });
-      console.log("🆕 Admin user created:", user.email);
-    } else {
-      console.log("✅ Admin user found:", user.email);
+    } else if (user.role !== "admin") {
+      user.role = "admin";
+      await user.save();
     }
 
-    // Step 6: Send token
     const tokenUser = {
       name: user.name,
       userId: user._id,
@@ -131,14 +110,13 @@ const googleLoginAdmin = async (req, res) => {
     };
 
     attachCookiesToResponse({ res, user: tokenUser });
-    console.log("🔐 Token attached for:", tokenUser);
 
     res.status(StatusCodes.OK).json({
       msg: "Admin login successful",
       user: tokenUser,
     });
   } catch (error) {
-    console.error("❌ Admin Google login error:", error);
+    console.error("Admin Google login error:", error);
     throw new CustomError.UnauthenticatedError("Google login failed");
   }
 };
