@@ -18,7 +18,12 @@ const connectDB = require("./db/connect");
 const app = express();
 
 // ✅ CORS middleware
-const allowedOrigins = ["http://localhost:3100", "http://localhost:3000"]; // Add production domains as needed
+const allowedOrigins = [
+  "http://localhost:3100",
+  "http://localhost:3000",
+  "https://www.farmgear.in",
+  "https://dashboard.farmgear.in",
+];
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;
