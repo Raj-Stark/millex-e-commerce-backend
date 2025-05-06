@@ -22,27 +22,10 @@ const attachCookiesToResponse = ({ res, user }) => {
     httpOnly: true,
     expires: new Date(Date.now() + oneDay),
     secure: isProduction, // only true if behind HTTPS
-    signed: true,
-    sameSite: isProduction ? "Strict" : "Lax", // allow cookie in dev
+    sameSite: isProduction ? "None" : "Lax", // allow in dev over HTTP
     path: "/",
   });
 };
-
-// const attachCookiesToResponse = ({ res, user }) => {
-//   const token = createJWT({ payload: user });
-//   const oneDay = 1000 * 60 * 60 * 24;
-
-//   const isProduction = process.env.NODE_ENV === "production";
-
-//   res.cookie("token", token, {
-//     httpOnly: true,
-//     expires: new Date(Date.now() + oneDay),
-//     secure: isProduction ? true : false, // ❗ allow over HTTP during dev
-//     signed: true,
-//     sameSite: "None",
-//     path: "/",
-//   });
-// };
 
 module.exports = {
   createJWT,
