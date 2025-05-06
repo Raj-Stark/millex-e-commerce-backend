@@ -24,6 +24,7 @@ const attachCookiesToResponse = ({ res, user }) => {
     secure: isProduction, // only true if behind HTTPS
     sameSite: isProduction ? "None" : "Lax", // allow in dev over HTTP
     path: "/",
+    signed: true,
   });
 };
 
