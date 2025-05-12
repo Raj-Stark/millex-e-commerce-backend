@@ -21,10 +21,11 @@ const attachCookiesToResponse = ({ res, user }) => {
   res.cookie("token", token, {
     httpOnly: true,
     expires: new Date(Date.now() + oneDay),
-    secure: isProduction, // only true if behind HTTPS
-    sameSite: isProduction ? "None" : "Lax", // allow in dev over HTTP
+    secure: isProduction, // HTTPS only in production
+    sameSite: isProduction ? "None" : "Lax",
     path: "/",
     signed: true,
+    ...(isProduction && { domain: ".farmgear.in" }),
   });
 };
 
