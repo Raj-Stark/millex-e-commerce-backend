@@ -57,7 +57,7 @@ app.use(cookieParser(process.env.JWT_SECRET));
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/product", productRouter);
-app.use("/api/v1/category", categoryRouter);
+app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/banner", bannerRouter);
 app.use("/api/v1/order", orderRouter);

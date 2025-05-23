@@ -38,6 +38,12 @@ const ProductSchema = new mongoose.Schema(
       ref: "Category",
       required: [true, "Please provide categoryId"],
     },
+    subcategory: {
+      type: mongoose.Types.ObjectId,
+      ref: "Category",
+      default: null,
+      required: [true, "Please provide subcategoryId"],
+    },
     featured: {
       type: Boolean,
       default: false,

@@ -6,26 +6,37 @@ const {
   deleteCategory,
 } = require("../controllers/categoryController");
 
+const { uploadImage } = require("../controllers/productController");
+
 const {
   authenticateUser,
   authorizePermission,
 } = require("../middlewares/authentication");
+
 const { handleFileUpload } = require("../utils/cloudinaryUpload");
-const { uploadImage } = require("../controllers/productController");
 
 const router = express.Router();
 
+// 📌 Upload category image (reusing uploadImage from productController)
+router.post(
+  "/upload-image",
+  [authenticateUser, authorizePermission("admin"), handleFileUpload],
+  uploadImage
+);
+
+// 📌 Create top-level category or get all top-level categories
 router
-  .route("/:parentSlug?")
+  .route("/")
   .get(getAllCategory)
   .post([authenticateUser, authorizePermission("admin")], createCategory);
 
+// 📌 Create or get subcategories under a parentSlug
 router
-  .route("/uploadImage")
-  .post(
-    [authenticateUser, authorizePermission("admin"), handleFileUpload],
-    uploadImage
-  );
+  .route("/parent/:parentSlug")
+  .get(getAllCategory)
+  .post([authenticateUser, authorizePermission("admin")], createCategory);
+
+// 📌 Update or delete by category ID
 router
   .route("/:id")
   .patch([authenticateUser, authorizePermission("admin")], updateCategory)

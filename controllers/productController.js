@@ -7,7 +7,7 @@ const Category = require("../models/Category");
 
 // ! Create Product
 const createProduct = async (req, res) => {
-  const { categoryId, ...rest } = req.body;
+  const { categoryId, subCategoryId, ...rest } = req.body;
 
   if (!categoryId) {
     return res
@@ -15,9 +15,35 @@ const createProduct = async (req, res) => {
       .json({ msg: "Please provide categoryId" });
   }
 
+  // ✅ Validate category existence
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    throw new CustomError.NotFoundError(
+      `Category not found with ID: ${categoryId}`
+    );
+  }
+
+  // ✅ Validate subcategory if provided
+  if (subCategoryId) {
+    const subcategory = await Category.findById(subCategoryId);
+    if (!subcategory) {
+      throw new CustomError.NotFoundError(
+        `Subcategory not found with ID: ${subCategoryId}`
+      );
+    }
+
+    if (!subcategory.parentId || !subcategory.parentId.equals(categoryId)) {
+      throw new CustomError.BadRequestError(
+        "Subcategory must belong to the selected category"
+      );
+    }
+  }
+
+  // ✅ Create product using correct schema field: `subcategory`
   const product = await Product.create({
     ...rest,
     category: categoryId,
+    subcategory: subCategoryId || null,
   });
 
   res.status(StatusCodes.CREATED).json({ product });
@@ -25,9 +51,32 @@ const createProduct = async (req, res) => {
 
 // ! Update Product
 const updateProduct = async (req, res) => {
+  const { categoryId, subCategoryId, ...rest } = req.body;
+
+  // ✅ Validate subcategory only if both are provided
+  if (subCategoryId && categoryId) {
+    const subcategory = await Category.findById(subCategoryId);
+    if (!subcategory) {
+      throw new CustomError.NotFoundError(
+        `Subcategory not found with ID: ${subCategoryId}`
+      );
+    }
+
+    if (!subcategory.parentId || !subcategory.parentId.equals(categoryId)) {
+      throw new CustomError.BadRequestError(
+        "Subcategory must belong to the selected category"
+      );
+    }
+  }
+
+  // ✅ Update product using correct schema field: 'subcategory'
   const product = await Product.findOneAndUpdate(
     { _id: req.params.id },
-    req.body,
+    {
+      ...rest,
+      ...(categoryId !== undefined && { category: categoryId }),
+      ...(subCategoryId !== undefined && { subcategory: subCategoryId }),
+    },
     {
       new: true,
       runValidators: true,
@@ -35,7 +84,7 @@ const updateProduct = async (req, res) => {
   );
 
   if (!product) {
-    throw new CustomError.NotFoundError(`No product with ID: ${productId}`);
+    throw new CustomError.NotFoundError(`No product with ID: ${req.params.id}`);
   }
 
   res.status(StatusCodes.OK).json({ product });
@@ -56,7 +105,9 @@ const deleteProduct = async (req, res) => {
 
 // ! Get All Product
 const getAllProduct = async (req, res) => {
-  const products = await Product.find({}).populate("category");
+  const products = await Product.find({})
+    .populate("category")
+    .populate("subcategory");
 
   res.status(StatusCodes.OK).json({ products, count: products.length });
 };
@@ -68,6 +119,7 @@ const getSingleProduct = async (req, res) => {
 
   const product = await Product.findOne({ slug: productSlug })
     .populate("category")
+    .populate("subcategory")
     .populate({
       path: "reviews",
       populate: {
@@ -119,94 +171,73 @@ const uploadImage = async (req, res, next) => {
 
 // ! Get Product By Category ID
 const getProductsByCategory = async (req, res) => {
-  /**
-   * @type {{
-   * categories: string[],
-   * }}
-   */
-  const body = req.body;
-  const { categorySlugs } = body;
+  const { categorySlugs } = req.body;
 
   if (!categorySlugs || categorySlugs.length === 0) {
     throw new CustomError.BadRequestError("Please provide category slug");
   }
 
-  async function convertCategorySlugsToCategories() {
-    let categoriesObjects = [];
-    for (let i = 0; i < categorySlugs.length; i++) {
-      const category = await Category.findOne({ slug: categorySlugs[i] });
+  // Convert slugs to category objects
+  const categoryObjects = await Promise.all(
+    categorySlugs.map(async (slug) => {
+      const category = await Category.findOne({ slug });
       if (!category) {
         throw new CustomError.NotFoundError(
-          `Category with slug: ${categorySlugs[i]} not found`
+          `Category with slug: ${slug} not found`
         );
       }
-      categoriesObjects.push(category);
-    }
-    return categoriesObjects;
-  }
-  let categoryObjects = await convertCategorySlugsToCategories();
+      return category;
+    })
+  );
 
-  async function verifyCategoryChain(categoryObjects) {
-    if (categoryObjects[0].parentId !== null) {
-      throw new CustomError.BadRequestError("Please provide a valid category");
-    }
-    for (let i = 0; i < categoryObjects.length - 1; i++) {
-      if (!categoryObjects[i]._id.equals(categoryObjects[i + 1].parentId)) {
-        throw new CustomError.BadRequestError(
-          "Please provide a valid category"
-        );
-      }
-    }
+  // Validate the chain (if passed in a nested form)
+  if (categoryObjects[0].parentId !== null) {
+    throw new CustomError.BadRequestError(
+      "First slug must be a top-level category"
+    );
   }
 
-  await verifyCategoryChain(categoryObjects);
+  for (let i = 0; i < categoryObjects.length - 1; i++) {
+    if (!categoryObjects[i + 1].parentId?.equals(categoryObjects[i]._id)) {
+      throw new CustomError.BadRequestError(
+        "Invalid category nesting in slugs"
+      );
+    }
+  }
 
   let products = [];
 
-  /**
-   *
-   * @param {any[]} categoryObjects
-   */
-  async function findProductsByCategory(categoryObjects2) {
-    for (let i = 0; i < categoryObjects2.length; i++) {
-      const productsFound = await Product.find({
-        category: categoryObjects2[i]._id,
+  // Recursive function to collect products by category & subcategory
+  const findProductsByCategory = async (categories) => {
+    for (const cat of categories) {
+      const found = await Product.find({
+        $or: [{ category: cat._id }, { subcategory: cat._id }],
       });
 
-      if (productsFound.length) {
-        if (categoryObjects !== categoryObjects2) {
-          console.log("subcall", productsFound);
-        }
-        products.push(...productsFound);
+      if (found.length) {
+        products.push(...found);
       }
+
+      const children = await Category.find({ parentId: cat._id });
+      await findProductsByCategory(children);
     }
+  };
 
-    const promisess = categoryObjects2.map(async (category) => {
-      const subcategories = await Category.find({ parentId: category._id });
-      console.log("subcategories", subcategories);
-      await findProductsByCategory(subcategories);
-    });
-    await Promise.all(promisess);
+  // Start from the last category in slug chain
+  const lastCategory = categoryObjects[categoryObjects.length - 1];
+  await findProductsByCategory([lastCategory]);
+
+  if (!products.length) {
+    throw new CustomError.NotFoundError("No products found for category");
   }
 
-  await findProductsByCategory(
-    categoryObjects.slice(categoryObjects.length - 1)
-  );
+  const subcategories = await Category.find({ parentId: lastCategory._id });
 
-  if (!products || products.length === 0) {
-    throw new CustomError.NotFoundError(`No products found for category`);
-  }
-
-  let lastCategory = categoryObjects[categoryObjects.length - 1];
-  let subcategories = await Category.find({
-    parentId: lastCategory._id,
+  res.status(StatusCodes.OK).json({
+    products,
+    count: products.length,
+    subcategories,
   });
-
-  console.log("subcategories", subcategories);
-
-  res
-    .status(StatusCodes.OK)
-    .json({ products, count: products.length, subcategories });
 };
 
 // ! Search Products
@@ -218,19 +249,33 @@ const searchProducts = async (req, res) => {
       throw new CustomError.BadRequestError("Please provide a search keyword");
     }
 
+    // Step 1: Find products by name or description
     const products = await Product.find({
       $or: [
         { name: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
-        { "category.name": { $regex: keyword, $options: "i" } },
       ],
-    }).populate("category");
+    })
+      .populate("category")
+      .populate("subcategory");
+
+    // Step 2: Filter also by populated category/subcategory names
+    const keywordLower = keyword.toLowerCase();
+
+    const filtered = products.filter((p) => {
+      return (
+        p.name.toLowerCase().includes(keywordLower) ||
+        p.description.toLowerCase().includes(keywordLower) ||
+        p.category?.name?.toLowerCase().includes(keywordLower) ||
+        p.subcategory?.name?.toLowerCase().includes(keywordLower)
+      );
+    });
 
     res.status(StatusCodes.OK).json({
-      products,
-      count: products.length,
+      products: filtered,
+      count: filtered.length,
       msg:
-        products.length === 0
+        filtered.length === 0
           ? `No products found for the keyword: ${keyword}`
           : undefined,
     });
