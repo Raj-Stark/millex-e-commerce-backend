@@ -6,11 +6,13 @@ const CustomError = require("../errors");
 const createOrder = async (req, res) => {
   const { items: cartItems, tax, shippingFee } = req.body;
 
+  console.log("Incoming Order Payload:", req.body);
+
   if (!cartItems || cartItems.length < 1) {
     throw new CustomError.BadRequestError("No Cart Items provided");
   }
 
-  if (!tax || !shippingFee) {
+  if (tax === undefined || shippingFee === undefined) {
     throw new CustomError.BadRequestError("Please provide tax & shipping fee");
   }
 
@@ -18,6 +20,7 @@ const createOrder = async (req, res) => {
   let subtotal = 0;
 
   for (const item of cartItems) {
+    // Optional: validate that product ID exists
     const dbProduct = await Product.findOne({ _id: item.product });
     if (!dbProduct) {
       throw new CustomError.BadRequestError(
@@ -25,19 +28,17 @@ const createOrder = async (req, res) => {
       );
     }
 
-    const { name, price, image, _id } = dbProduct;
-
     const singleOrderItem = {
       amount: item.amount,
-      name,
-      price,
-      image,
-      product: _id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      product: item.product,
     };
 
-    orderItems = [...orderItems, singleOrderItem];
+    orderItems.push(singleOrderItem);
 
-    subtotal += item.amount * price;
+    subtotal += item.amount * item.price;
   }
 
   const total = tax + shippingFee + subtotal;
@@ -53,8 +54,9 @@ const createOrder = async (req, res) => {
 
   res.status(StatusCodes.CREATED).json({ order });
 };
+
 const getAllOrder = async (req, res) => {
-  const orders = await Order.find({});
+  const orders = await Order.find({}).populate("user");
 
   res.status(StatusCodes.OK).json({ orders, count: orders.length });
 };
