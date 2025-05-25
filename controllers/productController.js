@@ -174,10 +174,10 @@ const getProductsByCategory = async (req, res) => {
   const { categorySlugs } = req.body;
 
   if (!categorySlugs || categorySlugs.length === 0) {
-    throw new CustomError.BadRequestError("Please provide category slug");
+    throw new CustomError.BadRequestError("Please provide category slug(s)");
   }
 
-  // Convert slugs to category objects
+  // Convert slugs to category documents
   const categoryObjects = await Promise.all(
     categorySlugs.map(async (slug) => {
       const category = await Category.findOne({ slug });
@@ -190,50 +190,56 @@ const getProductsByCategory = async (req, res) => {
     })
   );
 
-  // Validate the chain (if passed in a nested form)
-  if (categoryObjects[0].parentId !== null) {
-    throw new CustomError.BadRequestError(
-      "First slug must be a top-level category"
-    );
-  }
-
-  for (let i = 0; i < categoryObjects.length - 1; i++) {
-    if (!categoryObjects[i + 1].parentId?.equals(categoryObjects[i]._id)) {
+  // ✅ Validate parent-child nesting only if multiple slugs are provided
+  if (categoryObjects.length > 1) {
+    if (categoryObjects[0].parentId !== null) {
       throw new CustomError.BadRequestError(
-        "Invalid category nesting in slugs"
+        "First slug must be a top-level category"
       );
+    }
+
+    for (let i = 0; i < categoryObjects.length - 1; i++) {
+      const parent = categoryObjects[i];
+      const child = categoryObjects[i + 1];
+
+      if (!child.parentId?.equals(parent._id)) {
+        throw new CustomError.BadRequestError(
+          "Invalid category nesting in slugs"
+        );
+      }
     }
   }
 
-  let products = [];
+  const lastCategory = categoryObjects[categoryObjects.length - 1];
+  const products = [];
 
-  // Recursive function to collect products by category & subcategory
+  // ✅ Recursively find products in the category and its children
   const findProductsByCategory = async (categories) => {
     for (const cat of categories) {
       const found = await Product.find({
         $or: [{ category: cat._id }, { subcategory: cat._id }],
       });
 
-      if (found.length) {
+      if (found.length > 0) {
         products.push(...found);
       }
 
       const children = await Category.find({ parentId: cat._id });
-      await findProductsByCategory(children);
+      if (children.length > 0) {
+        await findProductsByCategory(children);
+      }
     }
   };
 
-  // Start from the last category in slug chain
-  const lastCategory = categoryObjects[categoryObjects.length - 1];
   await findProductsByCategory([lastCategory]);
 
   if (!products.length) {
-    throw new CustomError.NotFoundError("No products found for category");
+    throw new CustomError.NotFoundError("No products found for this category");
   }
 
   const subcategories = await Category.find({ parentId: lastCategory._id });
 
-  res.status(StatusCodes.OK).json({
+  return res.status(StatusCodes.OK).json({
     products,
     count: products.length,
     subcategories,
