@@ -21,8 +21,8 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3100",
   "http://localhost:3000",
-  "https://www.farmgear.in",
-  "https://dashboard.farmgear.in",
+  "https://www.sparepartsbharat.com",
+  "https://dashboard.sparepartsbharat.com",
 ];
 
 app.use((req, res, next) => {
