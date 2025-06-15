@@ -33,6 +33,8 @@ const createCashfreeOrder = async (order, user) => {
     },
   };
 
+  console.log("Paylaod", payload);
+
   try {
     const response = await axios.post(`${baseUrl}/orders`, payload, config);
     console.log("✅ Cashfree Order Response:", response.data);
