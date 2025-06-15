@@ -116,7 +116,6 @@ const googleLoginAdmin = async (req, res) => {
       user: tokenUser,
     });
   } catch (error) {
-    console.error("Admin Google login error:", error);
     throw new CustomError.UnauthenticatedError("Google login failed");
   }
 };

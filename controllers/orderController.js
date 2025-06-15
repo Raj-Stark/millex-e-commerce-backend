@@ -2,57 +2,106 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors");
+const User = require("../models/User");
+const { createCashfreeOrder } = require("../utils/cashfree");
 
 const createOrder = async (req, res) => {
-  const { items: cartItems, tax, shippingFee } = req.body;
+  const { items: cartItems, tax, shippingFee, paymentMode } = req.body;
 
-  console.log("Incoming Order Payload:", req.body);
-
+  // Basic validations
   if (!cartItems || cartItems.length < 1) {
-    throw new CustomError.BadRequestError("No Cart Items provided");
+    throw new CustomError.BadRequestError("No cart items provided");
   }
 
-  if (tax === undefined || shippingFee === undefined) {
-    throw new CustomError.BadRequestError("Please provide tax & shipping fee");
+  if (typeof tax !== "number" || typeof shippingFee !== "number") {
+    throw new CustomError.BadRequestError(
+      "Please provide valid tax and shipping fee"
+    );
   }
+
+  if (!["cod", "online"].includes(paymentMode)) {
+    throw new CustomError.BadRequestError("Invalid payment mode");
+  }
+
+  // ✅ Validate user details
+  const user = await User.findById(req.user.userId);
+  if (
+    !user ||
+    !user.name ||
+    !user.email ||
+    !user.phone ||
+    !user.address?.street ||
+    !user.address?.city ||
+    !user.address?.state ||
+    !user.address?.zip ||
+    !user.address?.country
+  ) {
+    throw new CustomError.BadRequestError(
+      "Please complete your billing details (name, email, phone, and address) before placing the order."
+    );
+  }
+
+  // ✅ Validate products
+  const productIds = cartItems.map((item) => item.product);
+
+  const dbProducts = await Product.find({ _id: { $in: productIds } });
+
+  const productMap = new Map();
+  dbProducts.forEach((product) =>
+    productMap.set(product._id.toString(), product)
+  );
 
   let orderItems = [];
   let subtotal = 0;
 
   for (const item of cartItems) {
-    // Optional: validate that product ID exists
-    const dbProduct = await Product.findOne({ _id: item.product });
-    if (!dbProduct) {
+    const productId = item.product?._id || item.product;
+    const product = productMap.get(productId.toString());
+
+    if (!product) {
       throw new CustomError.BadRequestError(
-        `No product with this id: ${item.product}`
+        `No product found with ID: ${productId}`
       );
     }
 
-    const singleOrderItem = {
+    orderItems.push({
+      name: product.name,
+      image: product.images[0],
+      price: product.price,
       amount: item.amount,
-      name: item.name,
-      price: item.price,
-      image: item.image,
-      product: item.product,
-    };
+      product: product._id,
+    });
 
-    orderItems.push(singleOrderItem);
-
-    subtotal += item.amount * item.price;
+    subtotal += product.price * item.amount;
   }
 
-  const total = tax + shippingFee + subtotal;
+  const total = subtotal + tax + shippingFee;
 
+  // ✅ Create Order
   const order = await Order.create({
     orderItems,
-    total,
     subtotal,
     tax,
     shippingFee,
+    total,
     user: req.user.userId,
+    status: "pending",
   });
 
-  res.status(StatusCodes.CREATED).json({ order });
+  // ✅ Handle COD
+  if (paymentMode === "cod") {
+    return res.status(StatusCodes.CREATED).json({
+      order,
+      message: "Order placed successfully with Cash on Delivery",
+    });
+  }
+
+  const { paymentUrl } = await createCashfreeOrder(order, user);
+
+  res.status(StatusCodes.CREATED).json({
+    order,
+    paymentUrl,
+  });
 };
 
 const getAllOrder = async (req, res) => {
