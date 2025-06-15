@@ -96,11 +96,11 @@ const createOrder = async (req, res) => {
     });
   }
 
-  const { paymentUrl } = await createCashfreeOrder(order, user);
+  const { sessionId } = await createCashfreeOrder(order, user);
 
   res.status(StatusCodes.CREATED).json({
     order,
-    paymentUrl,
+    sessionId,
   });
 };
 

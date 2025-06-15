@@ -49,7 +49,7 @@ const createCashfreeOrder = async (order, user) => {
 
     return {
       ...response.data,
-      paymentUrl,
+      sessionId,
     };
   } catch (error) {
     console.error(
