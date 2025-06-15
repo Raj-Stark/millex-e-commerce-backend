@@ -36,7 +36,6 @@ const createCashfreeOrder = async (order, user) => {
   try {
     const response = await axios.post(`${baseUrl}/orders`, payload, config);
     console.log("✅ Cashfree Order Response:", response.data);
-    console.log("✅ Generated Payment URL:", paymentUrl);
 
     let sessionId = response.data?.payment_session_id;
     if (!sessionId) {
