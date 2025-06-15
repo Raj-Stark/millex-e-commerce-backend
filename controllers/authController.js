@@ -10,7 +10,11 @@ const client = new OAuth2Client({
   redirectUri: "postmessage",
 });
 
-const ADMIN_EMAILS = ["vishalpj1144@gmail.com", "rpal778866@gmail.com"];
+const ADMIN_EMAILS = [
+  "vishalpj1144@gmail.com",
+  "rpal778866@gmail.com",
+  "anishsinghgzp1024@gmail.com",
+];
 
 // 🔄 Shared function to verify token and extract payload
 const getPayloadFromCode = async (code) => {

@@ -33,6 +33,11 @@ const ProductSchema = new mongoose.Schema(
       ],
       default: ["/uploads/example.jpeg"],
     },
+    weight: {
+      type: Number,
+      required: [true, "Please provide product weight"],
+      min: [0, "Weight must be a positive number"],
+    },
     category: {
       type: mongoose.Types.ObjectId,
       ref: "Category",
