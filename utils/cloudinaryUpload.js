@@ -71,9 +71,6 @@ cloudinary.config({
 const fileUploadCloud = async (localFilePath, size) => {
   try {
     if (!localFilePath) return null;
-
-    console.log(localFilePath);
-
     const result = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
       folder: "millex",

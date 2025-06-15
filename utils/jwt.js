@@ -25,7 +25,7 @@ const attachCookiesToResponse = ({ res, user }) => {
     sameSite: isProduction ? "None" : "Lax",
     path: "/",
     signed: true,
-    ...(isProduction && { domain: ".farmgear.in" }),
+    ...(isProduction && { domain: "sparepartsbharat.com" }),
   });
 };
 

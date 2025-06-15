@@ -20,8 +20,6 @@ const getSingleUser = async (req, res) => {
 };
 
 const getCurrentUser = async (req, res) => {
-  console.log("✅ Cookies received:", req.cookies);
-  console.log("✅ Signed cookies:", req.signedCookies);
   const user = await User.findById(req.user.userId).select("-googleId");
   if (!user) {
     throw new CustomError.NotFoundError("No user found with this ID");
