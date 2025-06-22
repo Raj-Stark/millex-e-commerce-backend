@@ -8,6 +8,7 @@ const {
   uploadImage,
   getProductsByCategory,
   searchProducts,
+  getRelatedProducts,
 } = require("../controllers/productController");
 
 const {
@@ -37,5 +38,7 @@ router
   .get(getSingleProduct)
   .patch([authenticateUser, authorizePermission("admin")], updateProduct)
   .delete([authenticateUser, authorizePermission("admin")], deleteProduct);
+
+router.get("/related/:slug", getRelatedProducts);
 
 module.exports = router;

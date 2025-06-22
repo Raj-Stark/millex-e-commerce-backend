@@ -23,6 +23,10 @@ const SingleOrderSchema = mongoose.Schema({
     ref: "Product",
     required: true,
   },
+  metaData: {
+    type: Object,
+    default: {},
+  },
 });
 
 const OrderSchema = mongoose.Schema(

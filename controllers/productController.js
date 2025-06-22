@@ -290,6 +290,42 @@ const searchProducts = async (req, res) => {
   }
 };
 
+function escapeRegex(word) {
+  return word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const getRelatedProducts = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const currentProduct = await Product.findOne({ slug });
+
+    if (!currentProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const keywords = currentProduct.name.split(" ").filter(Boolean);
+
+    if (keywords.length === 0) {
+      return res.status(200).json({ relatedProducts: [] });
+    }
+
+    const relatedProducts = await Product.find({
+      _id: { $ne: currentProduct._id },
+      $or: keywords.map((word) => ({
+        name: { $regex: escapeRegex(word), $options: "i" },
+      })),
+    })
+      .limit(10)
+      .select("name slug price images category subcategory")
+      .lean();
+
+    res.status(200).json({ relatedProducts });
+  } catch (error) {
+    console.error("Related product fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 module.exports = {
   createProduct,
   updateProduct,
@@ -299,4 +335,5 @@ module.exports = {
   uploadImage,
   getProductsByCategory,
   searchProducts,
+  getRelatedProducts,
 };

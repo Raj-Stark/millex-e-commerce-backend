@@ -57,7 +57,10 @@ const createOrder = async (req, res) => {
   for (const item of cartItems) {
     const productId = item.product?._id || item.product;
     const product = productMap.get(productId.toString());
-
+    console.log("Processing item:", {
+      productId: item.product,
+      metaData: item.metaData, // Check what's received
+    });
     if (!product) {
       throw new CustomError.BadRequestError(
         `No product found with ID: ${productId}`
@@ -70,6 +73,7 @@ const createOrder = async (req, res) => {
       price: product.price,
       amount: item.amount,
       product: product._id,
+      metaData: item.metaData || {},
     });
 
     subtotal += product.price * item.amount;
