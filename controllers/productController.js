@@ -129,7 +129,9 @@ const getSingleProduct = async (req, res) => {
     });
 
   if (!product) {
-    throw new CustomError.NotFoundError(`No product with ID: ${productId}`);
+    return res
+      .status(404)
+      .json({ message: `No product with slug: ${productSlug}` });
   }
 
   res.status(StatusCodes.OK).json({ product });
